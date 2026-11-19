@@ -1,0 +1,709 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0A4DA2">
+<title>주거계약 안전 내비게이터</title>
+<style>
+@font-face{font-family:"Pretendard";font-weight:45 920;font-style:normal;font-display:swap;src:url("fonts/PretendardVariable.woff2") format("woff2-variations"),url("fonts/PretendardVariable.woff2") format("woff2")}
+:root{
+  --brand:#0A4DA2; --brand-dark:#073A7C; --brand-soft:#E8F0FB;
+  --green:#8CC63F; --green-ink:#2E6B12; --green-soft:#EEF7E4;
+  --bg:#F4F6FA; --surface:#FFFFFF; --ink:#111827; --sub:#374151; --muted:#6B7280; --line:#E6EAF0;
+  --ok:#1E8A4C; --ok-soft:#E4F5EB; --warn:#B26A00; --warn-soft:#FFF3DC; --bad:#D93025; --bad-soft:#FDE8E6;
+  --sans:"Pretendard",-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;
+  --shadow:0 1px 2px rgba(16,24,40,.04),0 4px 14px rgba(16,24,40,.06);
+  --w:520px; color-scheme:light;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%;word-break:keep-all;overflow-wrap:break-word;line-break:strict}
+input,select,textarea{word-break:normal}
+body{margin:0;background:#E9EDF3;color:var(--ink);font-family:var(--sans);font-size:15px;line-height:1.55;letter-spacing:-.01em;-webkit-font-smoothing:antialiased}
+[hidden]{display:none!important}
+.shell{max-width:var(--w);margin:0 auto;min-height:100vh;background:var(--bg);position:relative}
+button{font:inherit;color:inherit}
+
+/* 헤더 */
+header.top{position:sticky;top:0;z-index:20;background:rgba(255,255,255,.95);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
+  padding:calc(env(safe-area-inset-top,0px) + 10px) max(16px,env(safe-area-inset-right,0px)) 10px max(16px,env(safe-area-inset-left,0px));
+  display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--line)}
+.logo{width:34px;height:34px;border-radius:11px;background:var(--brand);display:grid;place-items:center;flex:none;border:0;cursor:pointer}
+.logo svg{width:19px;height:19px;stroke:#fff;fill:none;stroke-width:2.2;stroke-linejoin:round}
+.brand{display:flex;flex-direction:column;line-height:1.2;min-width:0}
+.brand b{font-size:15.5px;font-weight:800;letter-spacing:-.03em}
+.brand span{font-size:11.5px;color:var(--muted);font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.seg{display:inline-flex;background:var(--bg);border-radius:999px;padding:3px;flex:none}
+.seg button{border:0;background:none;padding:6px 12px;border-radius:999px;font-size:13px;font-weight:700;color:var(--muted);cursor:pointer;white-space:nowrap}
+.seg button[aria-pressed="true"]{background:var(--surface);color:var(--brand);box-shadow:0 1px 3px rgba(16,24,40,.12)}
+.top .seg{margin-left:auto}
+.leasebtn{margin-left:auto;flex:none;border:1px solid var(--line);background:var(--surface);color:var(--brand);font-weight:800;font-size:14px;padding:8px 14px;border-radius:999px;cursor:pointer;white-space:nowrap}
+.pickcard{display:flex;gap:16px;align-items:center;width:100%;text-align:left;cursor:pointer;background:var(--surface);border:2px solid transparent;border-radius:20px;padding:18px;box-shadow:var(--shadow)}
+.pickcard[aria-pressed="true"]{border-color:var(--brand)}
+.pickcard .ic{flex:none;width:52px;height:52px;border-radius:16px;display:grid;place-items:center;font-size:19px;font-weight:800}
+.pickcard b{display:block;font-size:17px}
+.pickcard small{display:block;color:var(--muted);font-size:13.5px;margin-top:2px}
+.vs{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.vs .card{background:var(--bg);box-shadow:none;padding:14px}
+.vs .big2{font-size:26px;font-weight:800;letter-spacing:-.03em;margin:4px 0 2px;font-variant-numeric:tabular-nums}
+.vs .big2 small{font-size:13px;font-weight:700}
+.vs .card.win{outline:2px solid var(--ok);background:var(--ok-soft)}
+
+main{padding:16px max(16px,env(safe-area-inset-right,0px)) calc(env(safe-area-inset-bottom,0px) + 100px) max(16px,env(safe-area-inset-left,0px))}
+
+/* 탭바 */
+nav.tabbar{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:min(100%,var(--w));z-index:30;background:#fff;border-top:1px solid var(--line);
+  display:grid;grid-template-columns:repeat(5,1fr);padding:6px 4px calc(env(safe-area-inset-bottom,0px) + 8px)}
+.tab{border:0;background:none;color:var(--muted);display:flex;flex-direction:column;align-items:center;gap:3px;padding:6px 0 2px;cursor:pointer;font-size:11.5px;font-weight:600}
+.tab i{display:grid;place-items:center;width:50px;height:30px;border-radius:999px;transition:background .2s}
+.tab svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+.tab[aria-current="true"]{color:var(--brand)}
+.tab[aria-current="true"] i{background:var(--brand-soft)}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+
+/* 공통 */
+h1{font-size:23px;line-height:1.3;margin:4px 0 6px;font-weight:800;letter-spacing:-.04em;text-wrap:balance}
+h2{font-size:17px;margin:0;font-weight:800;letter-spacing:-.03em}
+h3{font-size:15.5px;margin:0;font-weight:700;letter-spacing:-.02em}
+p{margin:0}
+.lede{color:var(--muted);margin:0 0 16px;font-size:14.5px}
+.sec-h{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:26px 2px 12px}
+.muted{color:var(--muted)} .small{font-size:13px}
+.num{font-variant-numeric:tabular-nums}
+a{color:var(--brand);font-weight:600;text-decoration:none}
+a.term{color:var(--brand);border-bottom:1.5px dashed rgba(10,77,162,.45);font-weight:700}
+:focus-visible{outline:2.5px solid var(--brand);outline-offset:2px}
+.card{background:var(--surface);border-radius:18px;padding:18px;box-shadow:var(--shadow)}
+.stack{display:flex;flex-direction:column;gap:12px}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.back{display:inline-flex;align-items:center;gap:4px;border:0;background:var(--surface);box-shadow:var(--shadow);border-radius:12px;padding:8px 12px 8px 8px;cursor:pointer;font-weight:700;font-size:14px;margin-bottom:12px}
+.back svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+.pill{display:inline-flex;align-items:center;font-size:12px;font-weight:700;padding:3px 9px;border-radius:999px;white-space:nowrap}
+.p-high{background:var(--bad-soft);color:var(--bad)} .p-mid{background:var(--warn-soft);color:var(--warn)}
+.p-low{background:var(--brand-soft);color:var(--brand)} .p-ok{background:var(--ok-soft);color:var(--ok)} .p-gray{background:var(--bg);color:var(--muted)}
+.bar{height:8px;background:var(--line);border-radius:999px;overflow:hidden}
+.bar>i{display:block;height:100%;background:var(--brand);border-radius:999px;transition:width .3s}
+.btn{display:inline-flex;justify-content:center;align-items:center;gap:6px;background:var(--brand);color:#fff;border:0;font-weight:700;padding:13px 18px;border-radius:999px;cursor:pointer;font-size:15px}
+.btn.ghost{background:var(--surface);color:var(--ink);border:1px solid var(--line)}
+.btn.green{background:var(--green);color:#16330A}
+.btn.block{width:100%}
+.notice{background:var(--warn-soft);color:#5C3A00;padding:12px 14px;border-radius:14px;font-size:13.5px}
+.tip{display:flex;gap:10px;align-items:flex-start;background:var(--green-soft);color:#1F3D0E;border-radius:14px;padding:12px 14px;font-size:14px}
+.tip b{color:var(--green-ink)}
+.foot{margin:28px 4px 0;font-size:12px;color:var(--muted);text-align:center}
+.tabs2{display:flex;gap:6px;background:#E3E8F0;padding:4px;border-radius:14px;margin-bottom:14px}
+.tabs2 button{flex:1;border:0;background:none;padding:9px 4px;border-radius:11px;font-weight:700;font-size:13.5px;color:var(--muted);cursor:pointer}
+.tabs2 button[aria-pressed="true"]{background:#fff;color:var(--ink);box-shadow:0 1px 3px rgba(16,24,40,.12)}
+
+/* 홈 */
+.hero{position:relative;overflow:hidden;border-radius:22px;padding:20px;color:#fff;background:linear-gradient(135deg,#0A4DA2 0%,#1663C7 100%);box-shadow:0 10px 24px rgba(10,77,162,.28)}
+.hero::after{content:"";position:absolute;right:-50px;top:-60px;width:190px;height:190px;border-radius:50%;background:rgba(255,255,255,.08)}
+.hero::before{content:"";position:absolute;right:30px;bottom:-80px;width:150px;height:150px;border-radius:50%;background:rgba(140,198,63,.22)}
+.hero>*{position:relative;z-index:1}
+.hero .lbl{font-size:13px;color:#D6E4F7;font-weight:600}
+.hero .pct{font-size:40px;font-weight:800;letter-spacing:-.04em;line-height:1.1;margin:4px 0 12px}
+.hero .bar{background:rgba(255,255,255,.22)} .hero .bar>i{background:var(--green)}
+.hero .chip{position:absolute;right:16px;top:16px;z-index:2;font-size:12px;font-weight:700;background:rgba(255,255,255,.18);padding:5px 10px;border-radius:999px}
+.hero .next{margin-top:16px;display:flex;align-items:center;gap:12px;background:rgba(255,255,255,.12);border-radius:14px;padding:12px 14px;border:0;color:#fff;width:100%;text-align:left;cursor:pointer}
+.hero .next .dd{flex:none;background:var(--green);color:#16330A;font-weight:800;border-radius:10px;padding:5px 9px;font-size:13px}
+.hero .next small{display:block;color:#C9DAF2;font-size:12px}
+.quickgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px 4px;margin-top:18px}
+.qbtn{border:0;background:none;color:var(--sub);display:flex;flex-direction:column;align-items:center;gap:7px;cursor:pointer;font-size:12px;font-weight:600;text-align:center;line-height:1.25}
+.qbtn i{width:54px;height:54px;border-radius:18px;background:var(--surface);box-shadow:var(--shadow);display:grid;place-items:center}
+.qbtn svg{width:24px;height:24px;stroke:var(--brand);fill:none;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+.qbtn.hot i{background:var(--brand)} .qbtn.hot svg{stroke:#fff}
+
+/* 단계 */
+.stages{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;margin:0 -16px;padding:2px 16px 6px}
+.stages::-webkit-scrollbar{display:none}
+.stage{flex:none;border:1px solid var(--line);background:var(--surface);color:var(--sub);font-size:14px;font-weight:600;padding:9px 14px;border-radius:999px;cursor:pointer;white-space:nowrap}
+.stage .n{margin-right:5px;color:var(--muted);font-weight:800}
+.stage[aria-pressed="true"]{background:var(--ink);border-color:var(--ink);color:#fff}
+.stage[aria-pressed="true"] .n{color:var(--green)}
+.steplist{position:relative;display:flex;flex-direction:column;gap:12px}
+.stepcard{display:grid;grid-template-columns:44px 1fr;gap:12px;align-items:flex-start}
+.stepnum{width:44px;height:44px;border-radius:14px;background:var(--brand);color:#fff;display:grid;place-items:center;font-weight:800;font-size:18px}
+.stepcard .card{padding:16px}
+.stepcard ul{margin:10px 0 0;padding:0;list-style:none;display:flex;flex-direction:column;gap:6px}
+.stepcard li{display:flex;gap:8px;font-size:14px;color:var(--sub)}
+.stepcard li::before{content:"";flex:none;width:6px;height:6px;border-radius:50%;background:var(--green);margin-top:8px}
+.stepcard .acts{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
+.chipbtn{border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:7px 12px;font-size:13px;font-weight:700;cursor:pointer;color:var(--ink)}
+.chipbtn.pri{background:var(--brand-soft);border-color:transparent;color:var(--brand)}
+
+/* 체크리스트 */
+.itemrow{display:flex;gap:12px;align-items:center;padding:14px 0;border-top:1px solid var(--line)}
+.itemrow:first-child{border-top:0;padding-top:2px}
+.itemrow:last-child{padding-bottom:2px}
+.ck{flex:none;width:26px;height:26px;border-radius:50%;border:2px solid #C9D2DF;background:#fff;display:grid;place-items:center;cursor:pointer;padding:0}
+.ck svg{width:14px;height:14px;stroke:#fff;fill:none;stroke-width:3;stroke-linecap:round;stroke-linejoin:round;opacity:0}
+.ck[aria-pressed="true"]{background:var(--brand);border-color:var(--brand)}
+.ck[aria-pressed="true"] svg{opacity:1}
+.itemrow .open{flex:1;min-width:0;border:0;background:none;text-align:left;cursor:pointer;padding:0;display:flex;align-items:center;gap:8px}
+.itemrow .open span{flex:1;min-width:0}
+.itemrow .open b{display:block;font-size:15px}
+.itemrow .open small{display:block;color:var(--muted);font-size:12.5px;margin-top:2px}
+.itemrow.done .open b{color:var(--muted);text-decoration:line-through}
+.chev{flex:none;width:18px;height:18px;stroke:#A0A8B5;fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+
+/* 상세 */
+.dhead{background:var(--surface);border-radius:20px;padding:20px;box-shadow:var(--shadow)}
+.dhead h1{margin:10px 0 8px}
+.dsec{margin-top:14px}
+.dsec h2{display:flex;align-items:center;gap:8px;margin-bottom:10px;font-size:16px}
+.dsec h2 .ico{width:26px;height:26px;border-radius:8px;display:grid;place-items:center;font-size:14px}
+ol.how{margin:0;padding:0;list-style:none;counter-reset:h;display:flex;flex-direction:column;gap:10px}
+ol.how li{counter-increment:h;display:grid;grid-template-columns:26px 1fr;gap:10px;font-size:14.5px;color:var(--sub)}
+ol.how li::before{content:counter(h);width:26px;height:26px;border-radius:50%;background:var(--brand-soft);color:var(--brand);font-weight:800;font-size:13px;display:grid;place-items:center}
+ul.warn{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:8px}
+ul.warn li{background:var(--bad-soft);color:#7A1C15;border-radius:12px;padding:11px 13px;font-size:14px}
+ul.warn li a.term{color:#7A1C15;border-color:rgba(122,28,21,.4)}
+.tchips{display:flex;gap:8px;flex-wrap:wrap}
+.tchip{background:var(--brand-soft);color:var(--brand);border-radius:999px;padding:7px 12px;font-size:13.5px;font-weight:700}
+.linkrow{display:flex;align-items:center;gap:12px;padding:12px 0;border-top:1px solid var(--line);color:var(--ink);font-weight:500}
+.linkrow:first-child{border-top:0;padding-top:0}
+.linkrow b{display:block;font-size:14.5px}
+.linkrow small{display:block;color:var(--muted);font-size:12.5px}
+.linkrow .go{margin-left:auto;color:var(--muted)}
+.dnav{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:16px}
+.dnav button{border:0;background:var(--surface);box-shadow:var(--shadow);border-radius:14px;padding:12px;text-align:left;cursor:pointer;font-size:13px;color:var(--muted)}
+.dnav button b{display:block;color:var(--ink);font-size:14px;margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.dnav button:last-child{text-align:right}
+
+/* 특수 체크리스트 */
+.setcard{display:flex;gap:14px;align-items:center;border:0;width:100%;text-align:left;cursor:pointer;background:var(--surface);border-radius:18px;padding:16px;box-shadow:var(--shadow)}
+.setcard .ic{flex:none;width:46px;height:46px;border-radius:14px;display:grid;place-items:center;font-size:22px}
+.setcard b{display:block;font-size:15.5px}
+.setcard small{display:block;color:var(--muted);font-size:13px}
+.sitem{padding:14px 0;border-top:1px solid var(--line);display:grid;grid-template-columns:26px 1fr;gap:12px}
+.sitem:first-child{border-top:0;padding-top:2px}
+.sitem p{font-size:14px;color:var(--sub);margin-top:4px}
+.sitem.done b{color:var(--muted);text-decoration:line-through}
+.grp{font-size:12.5px;font-weight:800;color:var(--brand);margin:16px 2px 8px;letter-spacing:.02em}
+
+/* 상황별 대처 */
+.say{display:flex;flex-direction:column;gap:8px}
+.bubble{position:relative;background:var(--brand-soft);color:#0B2A55;border-radius:16px 16px 16px 4px;padding:12px 14px;font-size:14.5px;line-height:1.55}
+.bubble .to{display:block;font-size:11.5px;font-weight:800;color:var(--brand);margin-bottom:3px}
+.bubble .cp{position:absolute;right:8px;top:8px;border:0;background:#fff;color:var(--brand);font-size:11.5px;font-weight:800;border-radius:999px;padding:3px 8px;cursor:pointer}
+.bubble.has-cp{padding-right:58px}
+.rules{margin:0;padding:0;list-style:none;counter-reset:r;display:flex;flex-direction:column;gap:8px}
+.rules li{counter-increment:r;display:grid;grid-template-columns:24px 1fr;gap:10px;font-size:14px;color:#5C3A00}
+.rules li::before{content:counter(r);width:24px;height:24px;border-radius:50%;background:#fff;color:var(--warn);font-weight:800;font-size:12.5px;display:grid;place-items:center}
+.caserow{display:flex;align-items:center;gap:12px;padding:13px 0;border-top:1px solid var(--line);width:100%;border-left:0;border-right:0;border-bottom:0;background:none;text-align:left;cursor:pointer;color:var(--ink)}
+.caserow:first-child{border-top:0;padding-top:2px}
+.caserow:last-child{padding-bottom:2px}
+.caserow b{font-size:14.5px;display:block}
+.caserow small{display:block;color:var(--muted);font-size:12.5px;margin-top:2px}
+.caserow span{flex:1;min-width:0}
+.hotchips{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;margin:0 -16px;padding:2px 16px 4px}
+.hotchips::-webkit-scrollbar{display:none}
+.hotchip{flex:none;max-width:230px;border:0;background:var(--surface);box-shadow:var(--shadow);border-radius:16px;padding:12px 14px;text-align:left;cursor:pointer;font-size:13.5px;font-weight:700;line-height:1.4;color:var(--ink)}
+.hotchip small{display:block;color:var(--brand);font-size:11.5px;font-weight:800;margin-bottom:4px}
+
+/* 지원 */
+.form2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+label.f{display:flex;flex-direction:column;gap:6px;font-size:13px;font-weight:600;color:var(--muted);min-width:0}
+input,select{font:inherit;font-size:15px;color:var(--ink);background:var(--bg);border:1px solid transparent;border-radius:12px;padding:10px 12px;width:100%;min-width:0;min-height:44px}
+input:focus,select:focus{border-color:var(--brand);background:#fff;outline:none}
+.kchips{display:flex;gap:8px;flex-wrap:wrap}
+.kchip{border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:8px 13px;font-size:13.5px;font-weight:700;color:var(--sub);cursor:pointer}
+.kchip[aria-pressed="true"]{background:var(--ink);color:#fff;border-color:var(--ink)}
+.sup{display:flex;flex-direction:column;gap:8px}
+.sup dl{display:grid;grid-template-columns:44px 1fr;gap:6px 10px;margin:0;font-size:14px}
+.sup dt{color:var(--muted);font-weight:700}
+.sup dd{margin:0;color:var(--sub)}
+.needgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.need{border:1.5px solid var(--line);background:var(--surface);border-radius:14px;padding:11px 12px;text-align:left;cursor:pointer;color:var(--ink)}
+.need b{display:block;font-size:14.5px}
+.need small{display:block;font-size:12px;color:var(--muted);font-weight:500;margin-top:1px}
+.need[aria-pressed="true"]{border-color:var(--brand);background:var(--brand-soft)}
+.need[aria-pressed="true"] b{color:var(--brand)}
+.when{display:flex;gap:8px;align-items:baseline;background:var(--bg);border-radius:10px;padding:8px 12px;font-size:13.5px}
+.when span{flex:none;font-weight:800;color:var(--brand);font-size:12.5px}
+.when b{font-weight:700;color:var(--sub)}
+.sup .lk{display:flex;justify-content:center;border:1px solid var(--line);border-radius:999px;padding:10px;font-size:14px;color:var(--ink);margin-top:4px}
+details.more summary{cursor:pointer;font-weight:700;color:var(--muted);font-size:14px;padding:8px 2px}
+
+/* 용어 */
+.search{position:relative;margin-bottom:12px}
+.search input{padding-left:40px;background:var(--surface);box-shadow:var(--shadow)}
+.search svg{position:absolute;left:13px;top:50%;transform:translateY(-50%);width:18px;height:18px;stroke:var(--muted);fill:none;stroke-width:2.2}
+.termrow{display:flex;align-items:center;gap:12px;padding:13px 0;border-top:1px solid var(--line);color:var(--ink);font-weight:500}
+.termrow:first-child{border-top:0;padding-top:2px}
+.termrow b{font-size:15px}
+.termrow small{display:block;color:var(--muted);font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.termrow span{min-width:0;flex:1}
+.ex{background:var(--bg);border-radius:12px;padding:12px 14px;font-size:14px;color:var(--sub)}
+
+/* 계산기 */
+.form2 .full{grid-column:1/-1}
+.unit{position:relative}
+.unit input{padding-right:46px}
+.unit em{position:absolute;right:12px;top:50%;transform:translateY(-50%);font-style:normal;color:var(--muted);font-size:13px;font-weight:600}
+.gauge{border-radius:18px;padding:18px;color:#fff}
+.gauge .big{font-size:44px;font-weight:800;letter-spacing:-.04em;line-height:1}
+.stackbar{display:flex;height:22px;border-radius:8px;overflow:hidden;background:var(--line);margin-top:6px}
+.stackbar i{display:block;height:100%}
+.legend{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:12.5px;color:var(--muted);margin-top:8px}
+.legend span::before{content:"";display:inline-block;width:9px;height:9px;border-radius:3px;margin-right:5px;background:var(--c)}
+.kv{display:flex;justify-content:space-between;gap:10px;padding:9px 0;border-top:1px solid var(--line);font-size:14.5px}
+.kv:first-child{border-top:0}
+.kv b{font-variant-numeric:tabular-nums}
+
+/* 퀴즈 */
+.qprog{display:flex;gap:4px;margin-bottom:14px}
+.qprog i{flex:1;height:5px;border-radius:9px;background:var(--line)}
+.qprog i.on{background:var(--brand)}
+.qq{font-size:20px;font-weight:800;letter-spacing:-.03em;line-height:1.4;margin:6px 0 18px}
+.opts{display:grid;gap:10px}
+.opts.ox{grid-template-columns:1fr 1fr}
+.opt{border:2px solid var(--line);background:var(--surface);border-radius:16px;padding:15px;font-size:15.5px;font-weight:700;cursor:pointer;text-align:left}
+.opts.ox .opt{text-align:center;font-size:30px;padding:18px}
+.opt.right{border-color:var(--ok);background:var(--ok-soft);color:var(--ok)}
+.opt.wrong{border-color:var(--bad);background:var(--bad-soft);color:var(--bad)}
+.opt:disabled{cursor:default}
+.expl{margin-top:14px;border-radius:16px;padding:16px}
+.expl.r{background:var(--ok-soft)} .expl.w{background:var(--bad-soft)}
+.expl b{display:block;margin-bottom:4px}
+.score{text-align:center;padding:28px 18px}
+.score .big{font-size:56px;font-weight:800;color:var(--brand);letter-spacing:-.04em}
+@media (max-width:360px){.form2{grid-template-columns:1fr} .quickgrid{gap:12px 0}}
+</style>
+</head>
+<body>
+<div class="shell">
+  <header class="top">
+    <button class="logo" data-go="home" aria-label="홈으로"><svg viewBox="0 0 24 24"><path d="M4 11l8-6.5 8 6.5v8.5a1 1 0 0 1-1 1h-4.5v-5.5h-5V20.5H5a1 1 0 0 1-1-1z"/></svg></button>
+    <div class="brand"><b>첫 독립 가이드</b><span>주거계약 안전 내비게이터</span></div>
+    <button class="leasebtn" id="leasebtn" aria-label="계약 유형 바꾸기">월세 ▾</button>
+  </header>
+  <main id="main"></main>
+  <nav class="tabbar" aria-label="메뉴">
+    <button class="tab" data-tab="home"><i><svg viewBox="0 0 24 24"><path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg></i>홈</button>
+    <button class="tab" data-tab="steps"><i><svg viewBox="0 0 24 24"><circle cx="5" cy="6" r="2"/><circle cx="5" cy="18" r="2"/><path d="M5 8v8M10 6h10M10 18h10M10 12h10"/></svg></i>계약 순서</button>
+    <button class="tab" data-tab="check"><i><svg viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="18" rx="3"/><path d="M8 10l2.5 2.5L16 7M8 16h8"/></svg></i>체크리스트</button>
+    <button class="tab" data-tab="support"><i><svg viewBox="0 0 24 24"><path d="M12 21s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 11c0 5.6-7 10-7 10z"/></svg></i>지원 찾기</button>
+    <button class="tab" data-tab="more"><i><svg viewBox="0 0 24 24"><rect x="4" y="4" width="6.5" height="6.5" rx="2"/><rect x="13.5" y="4" width="6.5" height="6.5" rx="2"/><rect x="4" y="13.5" width="6.5" height="6.5" rx="2"/><rect x="13.5" y="13.5" width="6.5" height="6.5" rx="2"/></svg></i>더보기</button>
+  </nav>
+</div>
+<script src="data.js"></script>
+<script>
+/* ---------- 상태 (이 기기에만 저장) ---------- */
+const store={get(k,d){try{const v=localStorage.getItem("fg_"+k);return v==null?d:JSON.parse(v)}catch(e){return d}},set(k,v){try{localStorage.setItem("fg_"+k,JSON.stringify(v))}catch(e){}}};
+const S={lease:store.get("lease",null),done:new Set(store.get("done",[])),sdone:new Set(store.get("sdone",[])),stage:store.get("stage",1),
+  sup:{age:"",region:"서울",kinds:[]},termQ:"",
+  calc:store.get("calc",{price:25000,max:6000,senior:0,dep:12000,rate:75}),
+  cost:store.get("cost",{jDep:20000,jLoan:16000,jRate:3.5,wDep:1000,wRent:55,save:2.5,mgmt:0}),
+  quiz:{i:0,pick:null,score:0,done:false},
+  rev:{contract:"",balance:""}};
+const save=()=>{store.set("lease",S.lease);store.set("done",[...S.done]);store.set("sdone",[...S.sdone]);store.set("stage",S.stage);store.set("calc",S.calc);store.set("cost",S.cost)};
+const $=s=>document.querySelector(s);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const LN={w:"월세",j:"전세",u:"전월세"};
+const LNH={w:"월세",j:"전세",u:"아직 고민 중"};
+const tx=s=>s.replace(/\[\[(\w+):([^\]]+)\]\]/g,(m,id,t)=>TERMS[id]?`<a class="term" href="#term-${id}">${t}</a>`:t);
+const pick=arr=>S.lease==="u"?arr.flatMap(x=>typeof x==="string"?[x]:Object.entries(x).map(([k,v])=>`<b>${LN[k]}이라면</b> · ${v}`)):arr.filter(x=>typeof x==="string"||x[S.lease]).map(x=>typeof x==="string"?x:x[S.lease]);
+const sumOf=st=>S.lease==="u"?`<b>월세</b> ${st.sum.w}<br><b>전세</b> ${st.sum.j}`:st.sum[S.lease];
+const myItems=()=>ITEMS.filter(i=>i.t==="a"||i.t===S.lease);
+const IMP={3:["필수","p-high"],2:["중요","p-mid"],1:["권장","p-low"]};
+const pct=a=>a.length?Math.round(a.filter(x=>S.done.has(x.id)).length/a.length*100):0;
+const SV={
+ chev:'<svg class="chev" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg>',
+ back:'<svg viewBox="0 0 24 24"><path d="M15 6l-6 6 6 6"/></svg>',
+ tick:'<svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>',
+ steps:'<svg viewBox="0 0 24 24"><circle cx="5" cy="6" r="2"/><circle cx="5" cy="18" r="2"/><path d="M5 8v8M10 6h10M10 18h10M10 12h10"/></svg>',
+ check:'<svg viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="18" rx="3"/><path d="M8 10l2.5 2.5L16 7M8 16h8"/></svg>',
+ fake:'<svg viewBox="0 0 24 24"><path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1z"/><path d="M12 10v4M12 17v.5"/></svg>',
+ owner:'<svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.8-3.6 3.4-5.5 6.5-5.5s5.7 1.9 6.5 5.5M16 11l2 2 4-4"/></svg>',
+ support:'<svg viewBox="0 0 24 24"><path d="M12 21s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 11c0 5.6-7 10-7 10z"/></svg>',
+ terms:'<svg viewBox="0 0 24 24"><path d="M4 5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2z"/><path d="M4 19V5M9 8h6M9 12h4"/></svg>',
+ help:'<svg viewBox="0 0 24 24"><path d="M4 5h16v11H9l-5 4z"/><path d="M9.5 9a2.5 2.5 0 1 1 3.3 2.4c-.5.2-.8.6-.8 1.1M12 14.2v.3"/></svg>',
+ cost:'<svg viewBox="0 0 24 24"><path d="M7 4L3 8l4 4M3 8h14M17 12l4 4-4 4M21 16H7"/></svg>',
+ calc:'<svg viewBox="0 0 24 24"><rect x="5" y="3" width="14" height="18" rx="3"/><path d="M8.5 7h7M8.5 12h.01M12 12h.01M15.5 12h.01M8.5 16h.01M12 16h.01M15.5 16h.01"/></svg>',
+ quiz:'<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.7.3-1 .9-1 1.6v.6M12 17v.5"/></svg>',
+ info:'<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5v.5"/></svg>'
+};
+const backBtn=(label,to)=>`<button class="back" data-back="${to}">${SV.back}${label}</button>`;
+
+/* ---------- 라우팅 (#hash) ---------- */
+let navStack=0;
+function route(){
+  const h=(location.hash||"#home").slice(1);
+  let [p,...rest]=h.split("-"); const arg=rest.join("-");
+  const map={home,steps,check,item,set,support,more,terms,term,calc,quiz,info,pick:pickPage,cost,cases,case:kase};
+  if(!S.lease&&p!=="pick") p="pick";
+  if(!map[p]) p="home";
+  const tabOf={home:"home",steps:"steps",check:"check",item:"check",set:"check",support:"support",more:"more",terms:"more",term:"more",calc:"more",quiz:"more",info:"more",pick:"home",cost:"more",cases:"more",case:"more"};
+  document.querySelectorAll(".tab").forEach(b=>b.setAttribute("aria-current",b.dataset.tab===tabOf[p]));
+  const lb=$("#leasebtn"); lb.hidden=!S.lease; if(S.lease) lb.textContent=LNH[S.lease]+" ▾";
+  $("#main").innerHTML=map[p](arg);
+  bind();
+}
+function go(h){ if(location.hash==="#"+h) route(); else {navStack++; location.hash=h;} scrollTo(0,0); }
+addEventListener("hashchange",()=>{route();scrollTo(0,0)});
+
+/* ---------- 홈 ---------- */
+function home(){
+  const items=myItems(), all=pct(items);
+  const next=items.filter(i=>!S.done.has(i.id)).sort((a,b)=>a.s-b.s||b.imp-a.imp)[0];
+  const st=STEPS[S.stage-1];
+  const Q=[["steps","계약 순서",SV.steps],["check","체크리스트",SV.check],["set-fake","허위매물\n거르기",SV.fake],["set-owner","집주인·\n중개사",SV.owner],
+           ["support","지원 찾기",SV.support],["terms","용어사전",SV.terms],["calc","근저당\n계산기",SV.calc],["quiz","퀴즈",SV.quiz]];
+  return `<h1>첫 ${LN[S.lease]} 계약,<br>순서대로 하나씩 확인해요</h1>
+  <p class="lede">${S.lease==="u"?"월세·전세 공통 항목만 보여드려요. 비용을 비교해 보고 정해도 돼요.":"오른쪽 위에서 계약 유형을 바꾸면 내용이 맞춰 바뀌어요."}</p>
+  ${S.lease==="u"?`<button class="setcard" style="margin-bottom:14px;background:var(--green-soft)" data-go="cost"><span class="ic" style="background:#fff;color:var(--green-ink);font-size:18px;font-weight:800">⇄</span><span style="flex:1"><b>월세 vs 전세, 뭐가 나을까?</b><small>보증금·월세·대출 금리로 매달 부담 비교하기</small></span>${SV.chev}</button>`:""}
+  <div class="hero">
+   <span class="chip">${LNH[S.lease]} · ${S.stage}단계</span>
+   <div class="lbl">내 체크리스트 진행률</div>
+   <div class="pct num">${all}%</div>
+   <div class="bar"><i style="width:${all}%"></i></div>
+   ${next?`<button class="next" data-go="item-${next.id}"><span class="dd">다음</span><span>${next.title}<small>${next.s}단계 · ${STEPS[next.s-1].name}</small></span></button>`:`<div class="next"><span>모든 항목을 확인했어요!</span></div>`}
+  </div>
+  <div class="quickgrid">${Q.map(([h,l,ic],i)=>`<button class="qbtn ${i===6||i===7?"hot":""}" data-go="${h}"><i>${ic}</i>${l.replace("\n","<br>")}</button>`).join("")}</div>
+  <div class="sec-h"><h2>이럴 땐 어떡하죠?</h2><a class="small" href="#cases">전체 보기 ›</a></div>
+  <div class="hotchips">${CASES.filter(c=>c.hot).map(c=>`<button class="hotchip" data-go="case-${c.id}"><small>${CASEGRP[c.g]}</small>${c.title}</button>`).join("")}</div>
+  <div class="sec-h"><h2>지금 나의 계약 단계</h2></div>
+  ${stageBar()}
+  <div class="card stack" style="margin-top:10px">
+   <div class="row" style="justify-content:space-between"><h3>${st.n}. ${st.name}</h3><span class="pill p-gray">${st.when}</span></div>
+   <p style="color:var(--sub);font-size:14.5px">${sumOf(st)}</p>
+   <div class="tip"><span>💡</span><span>${st.tip}</span></div>
+   <button class="btn block" data-go="check">이 단계 체크리스트 보기</button>
+   ${CASES.some(c=>c.s===S.stage)?`<button class="btn block ghost" data-go="cases">이 단계에서 생길 수 있는 문제 ${CASES.filter(c=>c.s===S.stage).length}가지</button>`:""}
+  </div>
+  <p class="foot">첫 독립 가이드 · 바롬종합설계프로젝트 · @bahrom_firsthome.guide<br>체크 기록은 이 기기에만 저장돼요.</p>`;
+}
+function stageBar(){
+  return `<div class="stages" role="group" aria-label="계약 단계">${STEPS.map(s=>`<button class="stage" data-stage="${s.n}" aria-pressed="${S.stage===s.n}"><span class="n">${s.n}</span>${s.name}</button>`).join("")}</div>`;
+}
+
+/* ---------- 계약 순서 ---------- */
+function steps(){
+  return `<h1>${LN[S.lease]} 계약 순서</h1><p class="lede">집을 찾는 것부터 이사 나갈 때까지 6단계예요.</p>
+  <div class="steplist">${STEPS.map(s=>{const its=myItems().filter(i=>i.s===s.n);
+   return `<div class="stepcard"><div class="stepnum">${s.n}</div><div class="card">
+    <div class="row" style="justify-content:space-between"><h2>${s.name}</h2><span class="pill p-gray">${s.when}</span></div>
+    <p style="margin-top:6px;color:var(--sub);font-size:14.5px">${sumOf(s)}</p>
+    <ul>${its.map(i=>`<li>${i.title}</li>`).join("")}</ul>
+    <div class="acts"><button class="chipbtn pri" data-stagego="${s.n}">체크리스트 ${its.length}개</button>${s.n===1?`<button class="chipbtn" data-go="set-fake">허위매물 거르기</button>`:""}${s.n===2?`<button class="chipbtn" data-go="set-owner">집주인·중개사</button><button class="chipbtn" data-go="calc">근저당 계산기</button>`:""}<button class="chipbtn" data-supstep="${s.n}">도움 기관</button>${CASES.some(c=>c.s===s.n)?`<button class="chipbtn" data-casestep="${s.n}">이럴 땐? ${CASES.filter(c=>c.s===s.n).length}</button>`:""}</div>
+   </div></div>`}).join("")}</div>
+  ${planBox()}`;
+}
+/* 날짜로 일정 계산 */
+const pad=n=>String(n).padStart(2,"0");
+const fmt=d=>`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+const toD=s=>new Date(s+"T00:00:00");
+const addD=(s,n)=>{const d=toD(s);d.setDate(d.getDate()+n);return fmt(d)};
+const TODAY=fmt(new Date());
+const dday=s=>Math.round((toD(s)-toD(TODAY))/864e5);
+const WD=["일","월","화","수","목","금","토"];
+const kd=s=>{const d=toD(s);return `${d.getMonth()+1}/${d.getDate()}(${WD[d.getDay()]})`};
+function planBox(){
+  const r=S.rev; if(!r.contract){r.contract=addD(TODAY,14);r.balance=addD(TODAY,45);}
+  const ok=toD(r.balance)>=toD(r.contract);
+  const T=[["C",-7,"등기부·집주인·중개사 확인","c201"],["C",-5,LN[S.lease]==="전세"?"대출·반환보증 가능 여부 상담":"필요하면 대출 상담","c207"],["C",-1,"특약 문구 준비","c304"],["C",0,"계약 · 등기부 재확인 · 계약금 송금","c302"],
+           ["B",-14,S.lease==="j"?"대출 실행일 확정":"보증금 잔금 준비","c402"],["B",0,"잔금 · 전입신고 · 확정일자","c403"],["B",30,"임대차 신고 기한 (계약일 기준 30일)","c501"]];
+  const list=ok?T.map(([a,o,t,id])=>({d:a==="B"&&o===30?addD(r.contract,30):addD(a==="C"?r.contract:r.balance,o),t,id})).sort((a,b)=>a.d.localeCompare(b.d)):[];
+  return `<div class="sec-h"><h2>내 날짜로 일정 만들기</h2></div>
+  <div class="card stack">
+   <div class="form2"><label class="f">계약일<input type="date" data-rev="contract" value="${r.contract}"></label><label class="f">잔금일(입주일)<input type="date" data-rev="balance" value="${r.balance}"></label></div>
+   ${ok?list.map(x=>{const dd=dday(x.d);return `<button class="setcard" style="box-shadow:none;background:var(--bg);padding:12px 14px" data-go="item-${x.id}"><span class="pill ${dd<0?"p-gray":dd<=7?"p-high":"p-low"} num" style="min-width:58px;justify-content:center">${dd===0?"오늘":dd>0?"D-"+dd:"지남"}</span><span style="flex:1;min-width:0"><b style="font-size:14.5px">${x.t}</b><small class="num">${kd(x.d)}</small></span>${SV.chev}</button>`}).join(""):`<div class="notice">잔금일이 계약일보다 빨라요. 날짜를 확인해 주세요.</div>`}
+   <p class="small muted">권장 시점이에요. 대출·보증 상품의 실제 기한은 기관 안내를 따르세요.</p>
+  </div>`;
+}
+
+/* ---------- 체크리스트 ---------- */
+function check(){
+  const its=myItems().filter(i=>i.s===S.stage), st=STEPS[S.stage-1], p=pct(its);
+  return `<h1>단계별 체크리스트</h1><p class="lede">항목을 누르면 확인 방법과 주의할 점을 볼 수 있어요.</p>
+  ${stageBar()}
+  <div class="card" style="margin-top:10px">
+   <div class="row" style="justify-content:space-between;margin-bottom:8px"><h2>${st.n}. ${st.name}</h2><b class="num" style="color:var(--brand)">${p}%</b></div>
+   <div class="bar" style="margin-bottom:14px"><i style="width:${p}%"></i></div>
+   ${its.map(rowHTML).join("")}
+  </div>
+  <div class="sec-h"><h2>따로 꼭 보는 체크리스트</h2></div>
+  <div class="stack">${setCard("fake","🚩","var(--bad-soft)")}${setCard("owner","🪪","var(--brand-soft)")}</div>`;
+}
+const rowHTML=i=>`<div class="itemrow ${S.done.has(i.id)?"done":""}"><button class="ck" data-ck="${i.id}" aria-pressed="${S.done.has(i.id)}" aria-label="${esc(i.title)} 확인">${SV.tick}</button>
+  <button class="open" data-go="item-${i.id}"><span><b>${i.title}</b><small><span class="pill ${IMP[i.imp][1]}" style="padding:1px 7px;font-size:11px">${IMP[i.imp][0]}</span>${i.t!=="a"?` <span class="pill p-gray" style="padding:1px 7px;font-size:11px">${LN[i.t]}만</span>`:""}</small></span>${SV.chev}</button></div>`;
+const setCard=(k,ic,bg)=>{const s=SETS[k],n=s.items.filter(x=>S.sdone.has(x.id)).length;
+  return `<button class="setcard" data-go="set-${k}"><span class="ic" style="background:${bg}">${ic}</span><span style="flex:1;min-width:0"><b>${s.name}</b><small>${n} / ${s.items.length} 확인 · ${s.desc}</small></span>${SV.chev}</button>`};
+
+function item(id){
+  const it=ITEMS.find(i=>i.id===id); if(!it) return check();
+  const st=STEPS[it.s-1], list=myItems(), idx=list.indexOf(it), prev=list[idx-1], next=list[idx+1];
+  const how=pick(it.how), warn=pick(it.warn);
+  const goBtn={fake:["🚩 허위매물 체크리스트 열기","set-fake"],owner:["🪪 집주인·중개사 체크리스트 열기","set-owner"],calc:["🧮 근저당 계산기로 계산하기","calc"],support:["💙 받을 수 있는 지원 찾기","support"]}[it.go];
+  return `${backBtn(`${st.n}단계 목록`,"check")}
+  <div class="dhead">
+   <div class="row"><span class="pill p-low">${st.n}단계 · ${st.name}</span><span class="pill ${IMP[it.imp][1]}">${IMP[it.imp][0]}</span>${it.t!=="a"?`<span class="pill p-gray">${LN[it.t]}만 해당</span>`:""}</div>
+   <h1>${it.title}</h1>
+   <p style="color:var(--sub);font-size:15px">${tx(it.why)}</p>
+  </div>
+  <div class="card dsec"><h2><span class="ico" style="background:var(--brand-soft)">✔</span>이렇게 확인하세요</h2><ol class="how">${how.map(h=>`<li><span>${tx(h)}</span></li>`).join("")}</ol>
+   ${goBtn?`<button class="btn block" style="margin-top:14px" data-go="${goBtn[1]}">${goBtn[0]}</button>`:""}</div>
+  ${ASK[it.id]?`<div class="card dsec"><h2><span class="ico" style="background:var(--brand-soft)">💬</span>이렇게 물어보세요</h2>${sayHTML(ASK[it.id])}</div>`:""}
+  ${warn.length?`<div class="card dsec"><h2><span class="ico" style="background:var(--bad-soft)">⚠</span>주의할 점</h2><ul class="warn">${warn.map(w=>`<li>${tx(w)}</li>`).join("")}</ul></div>`:""}
+  ${it.terms.length?`<div class="card dsec"><h2><span class="ico" style="background:var(--green-soft)">📖</span>모르는 단어가 있다면</h2><div class="tchips">${it.terms.filter(t=>TERMS[t]).map(t=>`<a class="tchip" href="#term-${t}">${TERMS[t].name}</a>`).join("")}</div></div>`:""}
+  ${CASES.some(c=>c.items.includes(it.id))?`<div class="card dsec"><h2><span class="ico" style="background:var(--warn-soft)">🧭</span>이런 상황이라면</h2>${CASES.filter(c=>c.items.includes(it.id)).map(caseRow).join("")}</div>`:""}
+  ${it.links.length?`<div class="card dsec"><h2><span class="ico" style="background:var(--bg)">🔗</span>바로가기</h2>${it.links.map(linkRow).join("")}</div>`:""}
+  <button class="btn block ${S.done.has(it.id)?"ghost":"green"}" style="margin-top:16px" data-ck="${it.id}">${S.done.has(it.id)?"확인 완료 취소":"✓ 확인 완료로 표시"}</button>
+  <div class="dnav">${prev?`<button data-go="item-${prev.id}">← 이전<b>${prev.title}</b></button>`:"<span></span>"}${next?`<button data-go="item-${next.id}">다음 →<b>${next.title}</b></button>`:"<span></span>"}</div>`;
+}
+const linkRow=k=>{const l=LINKS[k];return l?`<a class="linkrow" href="${l[1]}" target="_blank" rel="noopener"><span><b>${l[0]}</b><small>${l[2]}</small></span><span class="go">↗</span></a>`:""};
+
+function set(k){
+  const s=SETS[k]; if(!s) return check();
+  let lastG="";
+  return `${backBtn("체크리스트","check")}
+  <h1>${s.name}</h1><p class="lede">${s.desc}</p>
+  <div class="card">${s.items.map(x=>{const g=x.grp&&x.grp!==lastG?(lastG=x.grp,`</div><p class="grp">${x.grp}</p><div class="card">`):"";
+   return `${g}<div class="sitem ${S.sdone.has(x.id)?"done":""}"><button class="ck" data-sck="${x.id}" aria-pressed="${S.sdone.has(x.id)}" aria-label="${esc(x.title)} 확인">${SV.tick}</button>
+    <div><b>${x.title}</b><p>${x.how}</p><div class="row" style="margin-top:6px">${x.link?`<a class="small" href="${LINKS[x.link][1]}" target="_blank" rel="noopener">${LINKS[x.link][0]} ↗</a>`:""}${x.term?`<a class="small term" href="#term-${x.term}">${TERMS[x.term].name}란?</a>`:""}</div></div></div>`}).join("")}</div>
+  <div class="tip" style="margin-top:14px"><span>💡</span><span>${s.foot}</span></div>
+  ${k==="fake"?`<button class="btn block" style="margin-top:12px" data-go="cases">집에 와 보니 이상할 때, 이렇게 말하세요 ›</button>`:""}`.replace('<div class="card"></div>','');
+}
+
+/* ---------- 지원 찾기 ---------- */
+let supStep=0;
+function support(){
+  const f=S.sup, age=parseInt(f.age,10);
+  const fit=p=>{const r=[];
+    if(p.lease!=="a"&&S.lease!=="u"&&p.lease!==S.lease) r.push(`${LN[p.lease]} 계약 대상`);
+    if(p.age&&!isNaN(age)&&(age<p.age[0]||age>p.age[1])) r.push(`만 ${p.age[0]}~${p.age[1]}세 대상`);
+    return r;};
+  let list=SUPPORT.filter(p=>!f.kinds.length||f.kinds.includes(p.kind)).filter(p=>!supStep||p.steps.includes(supStep));
+  const yes=list.filter(p=>!fit(p).length), no=list.filter(p=>fit(p).length);
+  return `<h1>내가 받을 수 있는 지원</h1><p class="lede"><b>서울에서 집을 구하는 청년</b> 기준이에요. 나이를 넣으면 해당되는 지원만 먼저 보여드려요. 지금은 <b>${LNH[S.lease]}</b> 기준이에요.</p>
+  <div class="card stack">
+   <div class="form2"><label class="f">만 나이<input type="number" inputmode="numeric" min="15" max="60" placeholder="예: 23" data-sup="age" value="${esc(f.age)}"></label>
+    <div class="f">지역<span style="min-height:44px;display:flex;align-items:center;padding:0 12px;border-radius:12px;background:var(--bg);color:var(--ink);font-size:15px">서울</span></div></div>
+   <div class="f" style="font-size:13px;font-weight:600;color:var(--muted)">어떤 도움이 필요해요? <span style="font-weight:500">(여러 개 고를 수 있어요)</span><div class="needgrid" style="margin-top:6px">${Object.entries(KIND).map(([k,v])=>`<button class="need" data-kind="${k}" aria-pressed="${f.kinds.includes(k)}"><b>${v}</b><small>${KIND_SUB[k]}</small></button>`).join("")}</div></div>
+  </div>
+  <div class="tip" style="margin-top:12px"><span>💡</span><span><b>알고도 못 받는 이유 3가지</b><br>① 모집 기간이 정해진 지원은 공고를 놓치면 다음 해까지 기다려야 해요. ② 비슷한 월세 지원은 보통 함께 받을 수 없어요. ③ 소득은 나만이 아니라 부모님 소득까지 보는 경우가 있어요. 신청 전 공고문의 '중복 지원'과 '소득 기준'을 꼭 확인하세요.</span></div>
+  ${supStep?`<div class="row" style="margin-top:12px;background:var(--brand-soft);border-radius:14px;padding:10px 14px;justify-content:space-between"><span class="small" style="color:var(--brand);font-weight:700">${supStep}단계 · ${STEPS[supStep-1].name}에 쓰는 도움만 보는 중</span><button class="chipbtn" data-sstep="0">전체 보기</button></div>`:""}
+  <div class="sec-h"><h2>해당될 수 있어요 <span class="pill p-ok num">${yes.length}</span></h2></div>
+  <div class="stack">${yes.map(p=>supCard(p)).join("")||`<div class="card muted">조건에 맞는 항목이 없어요. 필터를 바꿔 보세요.</div>`}</div>
+  ${no.length?`<details class="more" style="margin-top:14px"><summary>조건이 안 맞는 지원 ${no.length}개 보기</summary><div class="stack">${no.map(p=>supCard(p,fit(p))).join("")}</div></details>`:""}
+  <div class="notice" style="margin-top:16px">2026년 11월에 공식 안내·보도를 확인해 정리했어요. 금액·기간·소득 기준은 해마다 바뀌니 신청 전 반드시 공고를 확인하세요.</div>`;
+}
+const supCard=(p,why)=>`<div class="card sup"${why?' style="opacity:.75"':""}><div class="row" style="justify-content:space-between;flex-wrap:nowrap;align-items:flex-start"><h3>${p.name}</h3><span class="pill ${p.kind==="money"?"p-ok":p.kind==="loan"?"p-low":p.kind==="safety"?"p-mid":"p-gray"}">${KIND[p.kind]}</span></div>
+  ${why?`<p class="small" style="color:var(--bad);font-weight:700">✕ ${why.join(" · ")}</p>`:""}
+  <div class="when"><span>언제</span><b>${p.steps.length>=5?"계약 전 과정 언제든":p.steps.map(n=>STEPS[n-1].name).join(" · ")}</b></div>
+  <dl><dt>대상</dt><dd>${p.who}</dd><dt>내용</dt><dd>${p.what}</dd><dt>신청</dt><dd>${p.how}</dd></dl>
+  ${p.link?`<a class="lk" href="${LINKS[p.link][1]}" target="_blank" rel="noopener">${LINKS[p.link][0]} 바로가기 ↗</a>`:""}</div>`;
+
+/* ---------- 더보기 ---------- */
+function more(){
+  const M=[["cases","상황별 대처법","허위매물·계약금·보증금 문제, 이렇게 말하고 이렇게 하세요",SV.help,"var(--warn-soft)"],["terms","용어사전","체크리스트 속 어려운 단어 풀이",SV.terms,"var(--green-soft)"],["calc","근저당 계산기","내 보증금이 안전한지 숫자로 확인",SV.calc,"var(--brand-soft)"],["cost","월세·전세 비용 비교","보증금·월세·금리로 매달 부담 비교",SV.cost,"var(--green-soft)"],["quiz","계약 상식 퀴즈",`${QUIZ.length}문제로 내 이해도 확인`,SV.quiz,"var(--warn-soft)"],["info","안내·유의사항","서비스 기준일과 공식 사이트",SV.info,"var(--bg)"]];
+  return `<h1>더보기</h1><p class="lede">계약에 도움이 되는 도구를 모았어요.</p>
+  <div class="stack">${M.map(([h,t,d,ic,bg])=>`<button class="setcard" data-go="${h}"><span class="ic" style="background:${bg}">${ic.replace("<svg",'<svg style="width:24px;height:24px;stroke:var(--brand);fill:none;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round"')}</span><span style="flex:1"><b>${t}</b><small>${d}</small></span>${SV.chev}</button>`).join("")}</div>`;
+}
+
+/* ---------- 용어 ---------- */
+function terms(){
+  const q=S.termQ.trim(), cats=[...new Set(Object.values(TERMS).map(t=>t.cat))];
+  const hit=Object.entries(TERMS).filter(([id,t])=>!q||(t.name+(t.alias||"")+t.def).includes(q));
+  return `${backBtn("더보기","more")}<h1>용어사전</h1><p class="lede">체크리스트에서 <a class="term" href="#terms">밑줄 친 단어</a>를 누르면 여기로 연결돼요.</p>
+  <div class="search"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"/><path d="M20 20l-4.3-4.3"/></svg><input type="search" placeholder="단어 검색 (예: 근저당)" data-tq value="${esc(S.termQ)}"></div>
+  <div id="tlist">${termList(hit,cats,q)}</div>`;
+}
+function termList(hit,cats,q){
+  return cats.map(c=>{const l=hit.filter(([,t])=>t.cat===c).sort((a,b)=>a[1].name.localeCompare(b[1].name,"ko")); if(!l.length) return "";
+   return `<p class="grp">${c}</p><div class="card">${l.map(([id,t])=>`<a class="termrow" href="#term-${id}"><span><b>${t.name}</b>${t.alias?` <span class="muted small">(${t.alias})</span>`:""}<small>${t.def}</small></span>${SV.chev}</a>`).join("")}</div>`}).join("")||`<div class="card muted">'${esc(q)}'에 해당하는 단어가 없어요.</div>`;
+}
+function term(id){
+  const t=TERMS[id]; if(!t) return terms();
+  const used=ITEMS.filter(i=>i.terms.includes(id)&&(i.t==="a"||i.t===S.lease));
+  return `${backBtn("용어사전","terms")}
+  <div class="dhead"><span class="pill p-low">${t.cat}</span><h1>${t.name}${t.alias?` <span class="muted" style="font-size:16px;font-weight:600">(${t.alias})</span>`:""}</h1><p style="font-size:16px;color:var(--sub)">${t.def}</p></div>
+  ${t.ex?`<div class="card dsec"><h2><span class="ico" style="background:var(--green-soft)">💡</span>예를 들면</h2><div class="ex">${t.ex}</div></div>`:""}
+  ${t.rel.length?`<div class="card dsec"><h2><span class="ico" style="background:var(--brand-soft)">🔗</span>같이 알면 좋은 단어</h2><div class="tchips">${t.rel.filter(r=>TERMS[r]).map(r=>`<a class="tchip" href="#term-${r}">${TERMS[r].name}</a>`).join("")}</div></div>`:""}
+  ${used.length?`<div class="card dsec"><h2><span class="ico" style="background:var(--bg)">✔</span>이 단어가 나오는 체크리스트</h2>${used.map(i=>`<button class="linkrow" style="width:100%;border-left:0;border-right:0;border-bottom:0;background:none;cursor:pointer;text-align:left" data-go="item-${i.id}"><span><b>${i.title}</b><small>${i.s}단계 · ${STEPS[i.s-1].name}</small></span><span class="go">›</span></button>`).join("")}</div>`:""}`;
+}
+
+/* ---------- 근저당 계산기 ---------- */
+function calc(){
+  const c=S.calc, f=(k,l,u,full)=>`<label class="f${full?" full":""}">${l}<span class="unit"><input type="number" inputmode="decimal" min="0" step="any" data-calc="${k}" value="${c[k]}"><em>${u}</em></span></label>`;
+  return `${backBtn("더보기","more")}<h1>근저당 계산기</h1>
+  <p class="lede">집이 경매로 넘어갔을 때 내 보증금을 돌려받을 수 있을지 대략 계산해요.</p>
+  <div class="card stack">
+   <div class="form2">${f("price","집 시세(매매가)","만원",1)}${f("max","근저당 채권최고액 합계","만원")}${f("senior","앞선 세입자 보증금 합계","만원")}${f("dep","내 보증금","만원")}${f("rate","예상 낙찰가율","%")}</div>
+   <p class="small muted">채권최고액은 <a class="term" href="#term-eulgu">등기부 을구</a>에 있어요. 원룸 건물(<a class="term" href="#term-dagagu">다가구주택</a>)이면 다른 세입자 보증금도 꼭 넣으세요. 낙찰가율은 경매에서 시세 대비 팔리는 비율로, 집 종류·지역마다 달라요.</p>
+  </div>
+  <div id="cres">${calcResult()}</div>`;
+}
+function calcResult(){
+  const c=S.calc, P=+c.price||0, M=+c.max||0, Sn=+c.senior||0, D=+c.dep||0, R=Math.min(Math.max(+c.rate||0,0),100);
+  if(!P) return `<div class="card muted" style="margin-top:14px">집 시세를 입력해 주세요.</div>`;
+  const ratio=(M+Sn+D)/P*100, sale=P*R/100, ahead=M+Sn, back=Math.max(0,Math.min(D,sale-ahead)), lost=D-back;
+  const lv=ratio<=70?["비교적 낮은 편","linear-gradient(135deg,#1E8A4C,#3DA867)","보증금과 빚의 합이 시세의 70% 이하예요. 그래도 등기부·집주인 확인은 꼭 하세요."]
+          :ratio<=80?["주의가 필요해요","linear-gradient(135deg,#C77800,#E09A1B)","70~80% 구간이에요. 시세가 조금만 떨어져도 위험해질 수 있어요. 반환보증 가입 여부를 꼭 확인하세요."]
+          :["위험이 높아요","linear-gradient(135deg,#C62A1F,#E04B3C)","80%를 넘으면 흔히 '깡통전세' 위험이 크다고 봐요. 계약을 다시 검토하거나 전문가 상담을 받으세요."];
+  const w=v=>Math.max(0,Math.min(100,v/P*100)).toFixed(1)+"%";
+  return `<div class="gauge" style="background:${lv[1]};margin-top:14px">
+   <div class="small" style="opacity:.9;font-weight:600">(채권최고액 + 앞선 보증금 + 내 보증금) ÷ 시세</div>
+   <div class="big num" style="margin:8px 0 6px">${ratio.toFixed(1)}%</div>
+   <b style="font-size:17px">${lv[0]}</b><p style="font-size:14px;opacity:.95;margin-top:4px">${lv[2]}</p></div>
+  <div class="card" style="margin-top:12px">
+   <h3>집값 안에서 내 보증금의 위치</h3>
+   <div class="stackbar"><i style="width:${w(M)};background:#E04B3C"></i><i style="width:${w(Sn)};background:#E09A1B"></i><i style="width:${w(D)};background:var(--brand)"></i></div>
+   <div class="legend"><span style="--c:#E04B3C">근저당 ${M.toLocaleString()}</span><span style="--c:#E09A1B">앞선 보증금 ${Sn.toLocaleString()}</span><span style="--c:var(--brand)">내 보증금 ${D.toLocaleString()}</span><span style="--c:var(--line)">남는 여유</span></div>
+  </div>
+  <div class="card" style="margin-top:12px">
+   <h3 style="margin-bottom:6px">경매로 넘어간다면 (낙찰가율 ${R}%)</h3>
+   <div class="kv"><span>예상 낙찰가</span><b>${Math.round(sale).toLocaleString()}만원</b></div>
+   <div class="kv"><span>나보다 먼저 받아가는 돈</span><b>${ahead.toLocaleString()}만원</b></div>
+   <div class="kv"><span>내가 돌려받을 수 있는 돈</span><b style="color:var(--ok)">${Math.round(back).toLocaleString()}만원</b></div>
+   <div class="kv"><span>못 받을 수 있는 돈</span><b style="color:${lost>0?"var(--bad)":"var(--ink)"}">${Math.round(lost).toLocaleString()}만원</b></div>
+  </div>
+  <div class="notice" style="margin-top:12px">이해를 돕는 단순 계산이에요. 경매 비용, 세금 체납, <a class="term" href="#term-choeuseon">최우선변제</a>, 전입·확정일자 순서 등은 반영하지 않아 실제 결과와 다를 수 있어요. 70%·80%는 흔히 쓰는 참고 기준이에요.</div>`;
+}
+
+/* ---------- 상황별 대처 ---------- */
+let caseStep=0;
+const sayHTML=list=>`<div class="say">${list.map(([to,t])=>`<div class="bubble has-cp">${to?`<span class="to">${to}에게</span>`:""}"${t}"<button class="cp" data-copy="${esc(t)}">복사</button></div>`).join("")}</div>`;
+const caseRow=c=>`<button class="caserow" data-go="case-${c.id}"><span><b>${c.title}</b><small>${c.s}단계 · ${STEPS[c.s-1].name}</small></span>${SV.chev}</button>`;
+function cases(){
+  const list=CASES.filter(c=>!caseStep||c.s===caseStep);
+  return `${backBtn("더보기","more")}<h1>상황별 대처법</h1>
+  <p class="lede">당황스러운 순간에 그대로 읽으면 되는 문장과, 그다음 할 일을 모았어요.</p>
+  <div class="notice"><b style="display:block;margin-bottom:8px">어떤 상황이든 먼저 기억할 3가지</b><ol class="rules">${CASE_RULES.map(r=>`<li><span>${r}</span></li>`).join("")}</ol></div>
+  <div class="kchips" style="margin:14px 0 2px"><button class="kchip" data-casestep="0" aria-pressed="${!caseStep}">전체</button>${STEPS.filter(s=>CASES.some(c=>c.s===s.n)).map(s=>`<button class="kchip" data-casestep="${s.n}" aria-pressed="${caseStep===s.n}">${s.n}. ${s.name}</button>`).join("")}</div>
+  ${Object.entries(CASEGRP).map(([g,n])=>{const l=list.filter(c=>c.g===g);return l.length?`<p class="grp">${n}</p><div class="card">${l.map(caseRow).join("")}</div>`:""}).join("")||`<div class="card muted" style="margin-top:12px">이 단계에 해당하는 상황이 없어요.</div>`}
+  <p class="foot">서울여대생 10명 서면 인터뷰(2026.11)에서 나온 어려움을 바탕으로 정리했어요.<br>법률 판단이 필요하면 대한법률구조공단(☎132)에 상담하세요.</p>`;
+}
+function kase(id){
+  const c=CASES.find(x=>x.id===id); if(!c) return cases();
+  const idx=CASES.indexOf(c), prev=CASES[idx-1], next=CASES[idx+1];
+  return `${backBtn("상황별 대처법","cases")}
+  <div class="dhead"><div class="row"><span class="pill p-mid">${CASEGRP[c.g]}</span><span class="pill p-gray">${c.s}단계 · ${STEPS[c.s-1].name}</span></div>
+   <h1>${c.title}</h1><p style="color:var(--sub);font-size:15px">${tx(c.sit)}</p></div>
+  ${c.steps?`<div class="card dsec"><h2><span class="ico" style="background:var(--brand-soft)">✔</span>이렇게 확인하세요</h2><ol class="how">${c.steps.map(h=>`<li><span>${tx(h)}</span></li>`).join("")}</ol></div>`:""}
+  <div class="card dsec"><h2><span class="ico" style="background:var(--brand-soft)">💬</span>이렇게 말하세요</h2>${sayHTML(c.say)}</div>
+  <div class="card dsec"><h2><span class="ico" style="background:var(--green-soft)">→</span>그다음 할 일</h2><ol class="how">${c.after.map(h=>`<li><span>${tx(h)}</span></li>`).join("")}</ol>
+   ${c.go==="calc"?`<button class="btn block" style="margin-top:14px" data-go="calc">🧮 근저당 계산기로 계산하기</button>`:""}</div>
+  ${c.terms.length?`<div class="card dsec"><h2><span class="ico" style="background:var(--green-soft)">📖</span>모르는 단어가 있다면</h2><div class="tchips">${c.terms.filter(t=>TERMS[t]).map(t=>`<a class="tchip" href="#term-${t}">${TERMS[t].name}</a>`).join("")}</div></div>`:""}
+  ${c.items.length?`<div class="card dsec"><h2><span class="ico" style="background:var(--bg)">✔</span>관련 체크리스트</h2>${c.items.map(i=>ITEMS.find(x=>x.id===i)).filter(Boolean).map(i=>`<button class="caserow" data-go="item-${i.id}"><span><b>${i.title}</b><small>${i.s}단계 · ${STEPS[i.s-1].name}</small></span>${SV.chev}</button>`).join("")}</div>`:""}
+  ${c.links.length?`<div class="card dsec"><h2><span class="ico" style="background:var(--bg)">🔗</span>바로가기</h2>${c.links.map(linkRow).join("")}</div>`:""}
+  <div class="dnav">${prev?`<button data-go="case-${prev.id}">← 이전<b>${prev.title}</b></button>`:"<span></span>"}${next?`<button data-go="case-${next.id}">다음 →<b>${next.title}</b></button>`:"<span></span>"}</div>`;
+}
+
+/* ---------- 계약 유형 고르기 ---------- */
+function pickPage(){
+  const O=[["w","월","월세","보증금 + 매달 월세 · 대학가 원룸 대부분","var(--green-soft)","var(--green-ink)"],["j","전","전세","목돈 보증금만 내고 월세는 없음","var(--brand-soft)","var(--brand)"],["u","?","아직 모르겠어요","공통 항목과 월세·전세 비용 비교부터 볼게요","var(--bg)","var(--sub)"]];
+  return `<h1 style="margin-top:12px">어떤 집을 구하고 있나요?</h1>
+  <p class="lede">서울에서 집을 구하는 청년 기준이에요. 고른 계약 유형에 맞는 체크리스트와 일정만 보여드려요. 나중에 오른쪽 위에서 언제든 바꿀 수 있어요.</p>
+  <div class="stack">${O.map(([k,ic,t,d,bg,fg])=>`<button class="pickcard" data-setlease="${k}" aria-pressed="${S.lease===k}"><span class="ic" style="background:${bg};color:${fg}">${ic}</span><span><b>${t}</b><small>${d}</small></span></button>`).join("")}</div>
+  <p class="foot">첫 독립 가이드 · 바롬종합설계프로젝트 · @bahrom_firsthome.guide</p>`;
+}
+
+/* ---------- 월세·전세 비용 비교 ---------- */
+function cost(){
+  const c=S.cost, f=(k,l,u)=>`<label class="f">${l}<span class="unit"><input type="number" inputmode="decimal" min="0" step="any" data-cost="${k}" value="${c[k]}"><em>${u}</em></span></label>`;
+  return `${backBtn("더보기","more")}<h1>월세·전세 비용 비교</h1>
+  <p class="lede">같은 동네 비슷한 방의 조건을 넣으면 처음 필요한 돈과 매달 부담을 나란히 보여드려요.</p>
+  <div class="card stack">
+   <p class="grp" style="margin:0">전세</p>
+   <div class="form2">${f("jDep","전세 보증금","만원")}${f("jLoan","예상 대출금","만원")}${f("jRate","대출 금리","연 %")}</div>
+   <p class="grp" style="margin:4px 0 0">월세</p>
+   <div class="form2">${f("wDep","월세 보증금","만원")}${f("wRent","월세","만원")}</div>
+   <details class="more"><summary>더 정확하게 비교하기 (선택)</summary>
+    <div class="form2" style="margin-top:8px">${f("save","예금 금리","연 %")}${f("mgmt","전세 관리비가 더 비싸면","만원")}</div>
+    <p class="small muted" style="margin-top:8px">보증금으로 묶인 내 돈은 예금했다면 이자를 받을 수 있었어요. 이 '못 받은 이자'까지 넣어야 두 방식을 공정하게 비교할 수 있어요. 0을 넣으면 빼고 계산해요.</p>
+   </details>
+  </div>
+  <div id="costres">${costResult()}</div>`;
+}
+function costResult(){
+  const c=S.cost, n=k=>Math.max(0,+c[k]||0), fm=v=>(Math.round(v*10)/10).toLocaleString("ko-KR");
+  const jDep=n("jDep"), jLoan=Math.min(n("jLoan"),jDep), jOwn=jDep-jLoan, wDep=n("wDep"), sv=n("save")/100, mg=+c.mgmt||0;
+  const jInt=jLoan*n("jRate")/100/12, jOpp=jOwn*sv/12, jMon=jInt+jOpp+mg;
+  const wOpp=wDep*sv/12, wMon=n("wRent")+wOpp;
+  const diff=wMon-jMon, cheaper=Math.abs(diff)<0.05?null:diff>0?"j":"w";
+  const rateBE=jLoan?((wMon-jOpp-mg)*12/jLoan*100):null;
+  const bad=n("jLoan")>jDep&&jDep>0;
+  return `<div class="vs" style="margin-top:14px">
+   <div class="card ${cheaper==="j"&&!bad?"win":""}"><span class="small muted">전세 · 처음 필요한 돈</span><div class="big2">${fm(jOwn)}<small> 만원</small></div><span class="small muted">월 이자 약 <b class="num">${fm(jInt)}</b>만원</span></div>
+   <div class="card ${cheaper==="w"&&!bad?"win":""}"><span class="small muted">월세 · 처음 필요한 돈</span><div class="big2">${fm(wDep)}<small> 만원</small></div><span class="small muted">월 부담 <b class="num">${fm(n("wRent"))}</b>만원</span></div>
+  </div>
+  <div class="card" style="margin-top:12px">
+   <h3 style="margin-bottom:6px">한 달 실제 부담${sv?" (못 받은 예금이자 포함)":""}</h3>
+   <div class="kv"><span>전세</span><b>${fm(jMon)}만원</b></div>
+   <div class="kv"><span>월세</span><b>${fm(wMon)}만원</b></div>
+   <div class="kv"><span>2년 계약 동안 차이</span><b style="color:${cheaper?"var(--ok)":"var(--ink)"}">${fm(Math.abs(diff)*24)}만원</b></div>
+  </div>
+  <div class="tip" style="margin-top:12px"><span>💡</span><span>${bad?"대출금이 보증금보다 커요. 입력값을 확인해 주세요.":
+    cheaper==="j"?`입력값으로는 <b>전세가 매달 ${fm(diff)}만원 덜 들어요.</b> 대신 처음에 ${fm(jOwn-wDep)}만원이 더 필요하고, 대출 승인과 보증금 안전을 꼭 확인해야 해요.`:
+    cheaper==="w"?`입력값으로는 <b>월세가 매달 ${fm(-diff)}만원 덜 들어요.</b> 목돈이 적게 묶이고 대출이 필요 없는 대신, 낸 월세는 돌려받지 못해요.`:"두 방식의 매달 부담이 거의 같아요. 목돈 여유와 보증금 안전으로 정해 보세요."}
+    ${!bad&&rateBE!=null&&rateBE>0?`<br><span class="small">이 조건에서는 대출 금리가 <b class="num">연 ${rateBE.toFixed(1)}%</b>보다 낮으면 전세가 유리해요.</span>`:""}</span></div>
+  <div class="stack" style="margin-top:12px"><button class="btn block" data-setlease="j">전세로 정하기</button><button class="btn block ghost" data-setlease="w">월세로 정하기</button></div>
+  <div class="notice" style="margin-top:12px">입력값으로 계산한 단순 추정치예요. 대출 원금 상환, 보증료, 중개수수료, 이사 비용은 넣지 않았고 대출 승인 여부를 예측하지 않아요.</div>`;
+}
+
+/* ---------- 퀴즈 ---------- */
+function quiz(){
+  const z=S.quiz;
+  if(z.done){const p=Math.round(z.score/QUIZ.length*100);
+   return `${backBtn("더보기","more")}<div class="card score"><p class="muted" style="font-weight:700">내 점수</p><div class="big num">${z.score} / ${QUIZ.length}</div>
+    <p style="font-size:16px;font-weight:700;margin:6px 0 18px">${p>=90?"계약 준비 완료! 🎉":p>=60?"조금만 더 확인하면 돼요 👍":"체크리스트를 같이 봐요 📋"}</p>
+    <div class="stack"><button class="btn block" data-qreset>다시 풀기</button><button class="btn block ghost" data-go="check">체크리스트 보러 가기</button><button class="btn block ghost" data-go="terms">용어사전 보기</button></div></div>`;}
+  const q=QUIZ[z.i], ox=q.o.length===2&&q.o[0]==="O", ans=z.pick!=null;
+  return `${backBtn("더보기","more")}
+  <div class="qprog">${QUIZ.map((_,i)=>`<i class="${i<=z.i?"on":""}"></i>`).join("")}</div>
+  <div class="card">
+   <span class="pill p-low num">Q${z.i+1} · ${ox?"O/X":"객관식"}</span>
+   <p class="qq">${q.q}</p>
+   <div class="opts ${ox?"ox":""}">${q.o.map((o,i)=>`<button class="opt ${ans&&i===q.a?"right":""} ${ans&&i===z.pick&&i!==q.a?"wrong":""}" data-opt="${i}" ${ans?"disabled":""}>${o}</button>`).join("")}</div>
+   ${ans?`<div class="expl ${z.pick===q.a?"r":"w"}"><b>${z.pick===q.a?"정답이에요!":"아쉬워요. 정답은 "+q.o[q.a]}</b>${q.exp}
+     ${q.terms.length?`<div class="tchips" style="margin-top:10px">${q.terms.map(t=>`<a class="tchip" style="background:#fff" href="#term-${t}">${TERMS[t].name}</a>`).join("")}</div>`:""}</div>
+     <button class="btn block" style="margin-top:14px" data-qnext>${z.i===QUIZ.length-1?"결과 보기":"다음 문제"}</button>`:""}
+  </div>`;
+}
+
+/* ---------- 안내 ---------- */
+function info(){
+  return `${backBtn("더보기","more")}<h1>안내·유의사항</h1>
+  <div class="stack">
+   <div class="card stack" style="gap:6px"><h2>서비스 목적</h2><p style="color:var(--sub)">서울에서 처음 독립하는 청년이 계약 단계마다 무엇을, 어디서 확인해야 하는지 한눈에 볼 수 있도록 만들었어요.</p></div>
+   <div class="card stack" style="gap:6px"><h2>정보 기준일</h2><p style="color:var(--sub)">2026년 11월. 법령·지원 제도는 자주 바뀌니 신청·계약 전 공식 안내를 확인하세요.</p></div>
+   <div class="card stack" style="gap:6px"><h2>전문가 판단을 대신하지 않아요</h2><p style="color:var(--sub)">이 서비스는 집의 안전 여부나 대출·보증 승인을 판정하지 않아요. 판단이 어려우면 아래 기관에 상담하세요.</p></div>
+   <div class="card"><h2 style="margin-bottom:8px">공식 사이트</h2>${Object.keys(LINKS).map(linkRow).join("")}</div>
+  </div>
+  <p class="foot">첫 독립 가이드 · 바롬종합설계프로젝트<br>@bahrom_firsthome.guide</p>`;
+}
+
+/* ---------- 이벤트 ---------- */
+function bind(){
+  const A=(s,f)=>document.querySelectorAll(s).forEach(f);
+  A("#main [data-go]",b=>b.onclick=()=>go(b.dataset.go));
+  A("[data-back]",b=>b.onclick=()=>{ if(navStack>0){navStack--;history.back()} else go(b.dataset.back)});
+  A("[data-stage]",b=>b.onclick=()=>{S.stage=+b.dataset.stage;save();route()});
+  A("[data-stagego]",b=>b.onclick=()=>{S.stage=+b.dataset.stagego;save();go("check")});
+  A("[data-supstep]",b=>b.onclick=()=>{supStep=+b.dataset.supstep;go("support")});
+  A("[data-ck]",b=>b.onclick=()=>{const id=b.dataset.ck;S.done.has(id)?S.done.delete(id):S.done.add(id);save();route()});
+  A("[data-sck]",b=>b.onclick=()=>{const id=b.dataset.sck;S.sdone.has(id)?S.sdone.delete(id):S.sdone.add(id);save();route()});
+  A("[data-sup]",el=>el.onchange=()=>{S.sup[el.dataset.sup]=el.value;route()});
+  A("[data-kind]",b=>b.onclick=()=>{const k=b.dataset.kind,a=S.sup.kinds;S.sup.kinds=a.includes(k)?a.filter(x=>x!==k):[...a,k];route()});
+  A("[data-sstep]",b=>b.onclick=()=>{supStep=+b.dataset.sstep;route()});
+  A("[data-rev]",el=>el.onchange=()=>{if(el.value){S.rev[el.dataset.rev]=el.value;route()}});
+  A("[data-casestep]",b=>b.onclick=()=>{caseStep=+b.dataset.casestep; if(location.hash==="#cases") route(); else go("cases")});
+  A("[data-copy]",b=>b.onclick=e=>{e.stopPropagation();const t=b.dataset.copy;const done=()=>{b.textContent="복사됨";setTimeout(()=>b.textContent="복사",1500)};
+    try{navigator.clipboard.writeText(t).then(done,()=>{const r=document.createRange();r.selectNodeContents(b.parentNode);const sel=getSelection();sel.removeAllRanges();sel.addRange(r)})}catch(err){}});
+  A("[data-setlease]",b=>b.onclick=()=>{S.lease=b.dataset.setlease;save();go("home")});
+  A("[data-cost]",el=>el.oninput=()=>{const v=parseFloat(el.value);S.cost[el.dataset.cost]=isNaN(v)?0:v;save();$("#costres").innerHTML=costResult();A("#costres [data-setlease]",b=>b.onclick=()=>{S.lease=b.dataset.setlease;save();go("home")})});
+  A("[data-calc]",el=>el.oninput=()=>{const v=parseFloat(el.value);S.calc[el.dataset.calc]=isNaN(v)?0:v;save();$("#cres").innerHTML=calcResult()});
+  A("[data-tq]",el=>el.oninput=()=>{S.termQ=el.value;const q=el.value.trim();const hit=Object.entries(TERMS).filter(([,t])=>!q||(t.name+(t.alias||"")+t.def).includes(q));$("#tlist").innerHTML=termList(hit,[...new Set(Object.values(TERMS).map(t=>t.cat))],q)});
+  A("[data-opt]",b=>b.onclick=()=>{const z=S.quiz;if(z.pick!=null)return;z.pick=+b.dataset.opt;if(z.pick===QUIZ[z.i].a)z.score++;route()});
+  A("[data-qnext]",b=>b.onclick=()=>{const z=S.quiz;if(z.i===QUIZ.length-1)z.done=true;else{z.i++;z.pick=null}route();scrollTo(0,0)});
+  A("[data-qreset]",b=>b.onclick=()=>{S.quiz={i:0,pick:null,score:0,done:false};route()});
+}
+document.querySelectorAll(".tab").forEach(b=>b.onclick=()=>{if(b.dataset.tab==="support")supStep=0;go(b.dataset.tab)});
+document.querySelector(".logo").onclick=()=>go("home");
+document.querySelector("#leasebtn").onclick=()=>go("pick");
+route();
+</script>
+</body>
+</html>
